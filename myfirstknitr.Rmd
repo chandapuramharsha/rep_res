@@ -1,0 +1,128 @@
+# Title: "Reproducible Research_Assignment 1"  
+  Author: Harsha Chandapuram
+
+
+# reading the data
+```{r}
+setwd("C:/Users/Harsha/Desktop/RepData_PeerAssessment1")
+md <- read.csv("activity.csv",header = T)
+head(md)
+```
+
+# changing the date variable into date
+```{r}
+md$date <- as.Date(md$date)
+
+```
+
+# Sorting data by removing NAs
+```{r}
+md1 <- md[!is.na(md$steps),]
+head(md1)
+```
+
+#summarizing total number of steps taken each day
+```{r}
+library("plyr",lib.loc = "C:/Users/Harsha/Desktop/rpackages")
+tot <- ddply(md1,.(date),summarise,steps = sum(steps,na.rm = T))
+head(tot)
+
+```
+
+# histogram of total number of steps taken each day (after removing NAs)
+
+```{r}
+library("ggplot2",lib.loc = "C:/Users/Harsha/Desktop/rpackages")
+library("labeling",lib.loc = "C:/Users/Harsha/Desktop/rpackages")
+a <- ggplot(tot,aes(tot$steps))+geom_histogram(bins = 20,width=0.5,fill="white",col="red")
+b <- a + theme(axis.text.x=element_text(angle = 90,hjust = 1,vjust=0.5))
+print(b)
+```
+
+# mean and median of total number of steps taken per day (after removing NAs.)
+```{r}
+mean <- mean(tot$steps)
+mean
+median <- median(tot$steps)
+median
+```
+
+# Time-series plot of 5min-interval Vs avg.steps per inteval across all days (after removing NAs)
+```{r}
+fivemin <- ddply(md1,.(interval),summarise,steps = mean(steps,na.rm = T))
+base <- ggplot(fivemin,aes(fivemin$interval,y=fivemin$steps))
+base <- base + geom_line(stat="identity")+scale_x_continuous(breaks=seq(0,2355,50))
+print(base)
+```
+
+# Max. no. of steps in an interval across all days 
+```{r}
+m5m <- fivemin[which.max(fivemin$steps),]
+head(m5m)
+```
+
+# missing value rows in the data set
+```{r}
+setwd("C:/Users/Harsha/Desktop/RepData_PeerAssessment1")
+mmd <- read.csv("activity.csv",header = T)
+missing <- length(mmd$steps[is.na(mmd$steps)])
+missing
+
+```
+
+# filling in the missing values.
+```{r}
+for(i in 1:nrow(fivemin)){
+if(any(is.na(md$steps[md$interval==fivemin$interval[i]]))){
+md$steps[(md$interval==fivemin$interval[i])][is.na(md$steps[(md$interval==fivemin$interval[i])])] <- fivemin$steps[i]
+                }
+        }
+
+```
+
+# new totals after missing data filled in
+```{r}
+ntot <- ddply(md,.(date),summarise,steps=sum(steps,na.rm = T))
+head(ntot)
+
+```
+
+# histogram of total number of steps taken each day (After filled in Missing data)
+```{r}
+newa <- ggplot(ntot,aes(ntot$steps))+geom_histogram(bins = 20,width=0.5,fill="white",col="red")
+newa <- newa + theme(axis.text.x=element_text(angle = 90,hjust = 1,vjust=0.5))
+print(newa)
+```
+
+# mean and median of total number of steps taken per day (after filled in Missing data)
+```{r}
+mean2 <- mean(ntot$steps)
+mean2
+median2 <- median(ntot$steps)
+median2
+
+```
+
+# changing the dataset into weekdays and weekends
+```{r}
+library("chron",lib.loc = "C:/Users/Harsha/Desktop/rpackages")
+if(any(is.weekend(md$date))){
+md["days"] <- ifelse(is.weekend(md$date),"Weekend","Weekday")
+}
+newmd <- md[c(1,3,4)]
+newmd<- ddply(newmd,.(days,interval),summarise,steps=mean(steps))
+head(newmd)
+
+```
+
+# plotting panel plot of weekdays and weekends
+```{r}
+a <- ggplot(newmd, aes(interval,steps))+geom_line(color="blue")+facet_wrap(~days, ncol=1)
+print(a)
+
+```
+
+
+
+
+
